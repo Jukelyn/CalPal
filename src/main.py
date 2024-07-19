@@ -128,7 +128,7 @@ def get_end_day() -> date:
                 end_date = "07-19-2024"  # remove later
             end_datetime = datetime.strptime(end_date, "%m-%d-%Y")
             end_datetime = EST.localize(end_datetime)  # Localize to EST
-            end_datetime += timedelta(days=10)
+            end_datetime += timedelta(days=1)
             break
         except ValueError as err:
             if str(err) == "day is out of range for month":
@@ -194,7 +194,9 @@ def get_events_between(start: date, end: date) -> tuple[int, list[dict]]:
             # print(f"Event {num_events}: {event}, {event['duration']}")
             events_between.append(event)
 
-    return (len(events_between), events_between)
+    unique_events = remove_duplicate_events(events_between)
+
+    return (len(unique_events), unique_events)
 
 
 def format_datetime(dt: datetime) -> str:
@@ -213,23 +215,32 @@ def remove_duplicate_events(events: list[dict]) -> list[dict]:
     unique_events = []
 
     for event in events:
+        # Ensure datetime objects are consistent
+        # Remove microseconds for consistency
+        dtstart = event['dtstart'].replace(tzinfo=None, microsecond=0)
+        dtend = event['dtend'].replace(tzinfo=None, microsecond=0)
+        summary = event.get('summary', '')
+
         # Create a unique identifier for the event
-        event_id = (event['dtstart'], event['dtend'], event.get('summary', ''))
+        event_id = (dtstart, dtend, summary)
+
+        # print(f"Checking event: {event_id}")  # Debugging output
 
         if event_id not in seen:
             seen.add(event_id)
             unique_events.append(event)
+        # else:
+            # print(f"Duplicate found: {event_id}")  # Debugging output
 
     return unique_events
 
 
-num_events, events_between = get_events_between(start_day, end_day)
-events_between = remove_duplicate_events(events_between)
-print(len(events_between))
-print(events_between)
+num_events, events = get_events_between(start_day, end_day)
+# print(len(events))
+# print(events)
 print(f"There are {num_events} events. They are:\n")
-for event in events_between:
+for event in events:
     print(f"Summary: {event['summary']}")
-#     print(f"Start: {format_datetime(event['dtstart'])}")
-#     print(f"End: {format_datetime(event['dtend'])}")
+    print(f"Start: {format_datetime(event['dtstart'])}")
+    print(f"End: {format_datetime(event['dtend'])}")
     print(f"Duration: {event['duration']}\n")
