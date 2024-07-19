@@ -101,11 +101,18 @@ def get_start_day() -> date:
     """
     while True:
         try:
-            start_date = input("Enter starting date in MM-DD-YYYY format: ")
-            if not start_date:
-                start_date = "07-15-2024"  # remove later
+            start_date_in = input("Enter starting date in MM DD YYYY format: ")
+            if start_date_in:
+                start_date_arr = start_date_in.split()
+
+                start_date = f"{
+                    start_date_arr[0]}-{start_date_arr[1]}-{start_date_arr[2]}"
+            else:
+                start_date = "07-15-2024"  # left in on purpose
+
             start_datetime = datetime.strptime(start_date, "%m-%d-%Y")
             start_datetime = EST.localize(start_datetime)  # Localize to EST
+
             break
         except ValueError as err:
             if str(err) == "day is out of range for month":
@@ -123,12 +130,20 @@ def get_end_day() -> date:
     """
     while True:
         try:
-            end_date = input("Enter ending date in M-D-YYYY format: ")
-            if not end_date:
-                end_date = "07-19-2024"  # remove later
+            end_date_in = input("Enter ending date in MM DD YYYY format: ")
+
+            if end_date_in:
+                end_date_arr = end_date_in.split()
+
+                end_date = f"{
+                    end_date_arr[0]}-{end_date_arr[1]}-{end_date_arr[2]}"
+            else:
+                end_date = "07-19-2024"  # left in on purpose
+
             end_datetime = datetime.strptime(end_date, "%m-%d-%Y")
             end_datetime = EST.localize(end_datetime)  # Localize to EST
             end_datetime += timedelta(days=1)
+
             break
         except ValueError as err:
             if str(err) == "day is out of range for month":
@@ -203,7 +218,7 @@ def format_datetime(dt: datetime) -> str:
     """
     Format a datetime object to a string in '%Y-%m-%d %H:%M:%S' format.
     """
-    return dt.strftime('%Y-%m-%d %H:%M:%S')
+    return dt.strftime('%m-%d-%Y %H:%M:%S')
 
 
 def remove_duplicate_events(events: list[dict]) -> list[dict]:
