@@ -1,0 +1,7 @@
+icalendar==5.0.13
+python-dateutil==2.9.0.post0
+pytz==2024.1
+recurring-ical-events==2.2.3
+six==1.16.0
+tzdata==2024.1
+x-wr-timezone==0.0.7

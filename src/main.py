@@ -260,7 +260,7 @@ if num_events >= MANY_EVENTS:
     msg += "\n\tAn integer x - to view x events\n\tBlank - Skip viewing\n\n"
     msg += "Answer: "
     ans = input(msg)
-    # TODO: Add this functionality
+    # TODO: Add functionality for viewing options
 
 print(f"There are {num_events} events. They are:\n")
 for event in events:
@@ -269,4 +269,5 @@ for event in events:
     print(f"End: {format_datetime(event['dtend'])}")
     print(f"Duration: {event['duration']}\n")
 
+# TODO: Sort the events in chronological order
 # TODO: Add functionality to sum up event durations that have same summary
