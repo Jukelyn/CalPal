@@ -11,7 +11,6 @@ from icalendar import Calendar  # type: ignore # pylint: disable=E0401
 import recurring_ical_events  # type: ignore # pylint: disable=E0401
 
 EST = pytz.timezone('US/Eastern')
-
 FILE_STRUCT = """
     Calendar-Parser/
         └─ src/
@@ -21,6 +20,7 @@ FILE_STRUCT = """
             │   └─ ...
             └─ main.py
 """
+MANY_EVENTS = 5
 
 
 def parse_ics(file_path: str, start: datetime, end: datetime) -> list[dict]:
@@ -253,9 +253,20 @@ def remove_duplicate_events(events: list[dict]) -> list[dict]:
 num_events, events = get_events_between(start_day, end_day)
 # print(len(events))
 # print(events)
+
+if num_events >= MANY_EVENTS:
+    msg = f"\nThere are {num_events} events, do you want to see them all?"
+    msg += f"\nOptions:\n\tAll - to view all {num_events} events"
+    msg += "\n\tAn integer x - to view x events\n\tBlank - Skip viewing\n\n"
+    msg += "Answer: "
+    ans = input(msg)
+    # TODO: Add this functionality
+
 print(f"There are {num_events} events. They are:\n")
 for event in events:
     print(f"Summary: {event['summary']}")
     print(f"Start: {format_datetime(event['dtstart'])}")
     print(f"End: {format_datetime(event['dtend'])}")
     print(f"Duration: {event['duration']}\n")
+
+# TODO: Add functionality to sum up event durations that have same summary
