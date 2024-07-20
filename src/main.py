@@ -254,20 +254,79 @@ num_events, events = get_events_between(start_day, end_day)
 # print(len(events))
 # print(events)
 
-if num_events >= MANY_EVENTS:
+
+def display_events(number_shown: int):
+    """
+    Displays the specified number of events
+    """
+    print(number_shown)
+    return number_shown
+
+
+def what_next():
+    """
+    Method to determine what to do with the events besides viewing them.
+    Function should be called when the user chooses to display any number
+    of events, including  0 (skip viewing)
+    """
+    return
+
+
+def display_options():
+    """
+    Display options and handle them
+    """
     msg = f"\nThere are {num_events} events, do you want to see them all?"
     msg += f"\nOptions:\n\tAll - to view all {num_events} events"
     msg += "\n\tAn integer x - to view x events\n\tBlank - Skip viewing\n\n"
     msg += "Answer: "
-    ans = input(msg)
-    # TODO: Add functionality for viewing options
+    while True:
+        ans = input(msg).lower().strip()
 
-print(f"There are {num_events} events. They are:\n")
-for event in events:
+        if not ans:  # blank
+            print("blank")
+            break
+
+        if ans == "all":
+            print("all")
+            break
+
+        try:
+            ans = int(ans)
+            if ans not in range(1, num_events + 1):
+                print(f"You must enter a number 1 to {num_events}.\n")
+                msg = "New answer: "
+                continue
+            else:
+                display_events(ans)
+                break
+        except ValueError:
+            pass
+
+        # At this point it is not valid
+        print("You must select one of the available options.")
+        msg = f"\nOptions:\n\tAll - to view all {num_events} events"
+        msg += "\n\tAn integer x - to view x events\n\tBlank - Skip viewing"
+        msg += "\n\nAnswer: "
+
+    what_next()
+
+
+def display_event_details(event: dict = None):  # pylint: disable=W0621
+    """
+    Method to display the event details
+    """
     print(f"Summary: {event['summary']}")
     print(f"Start: {format_datetime(event['dtstart'])}")
     print(f"End: {format_datetime(event['dtend'])}")
     print(f"Duration: {event['duration']}\n")
+
+
+display_options()
+# print(f"There are {num_events} events.")
+# print("They are:")
+# for event in events:
+#     display_event_details(event)
 
 # TODO: Sort the events in chronological order
 # TODO: Add functionality to sum up event durations that have same summary
