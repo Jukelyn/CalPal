@@ -114,12 +114,12 @@ def get_cal_path(calendar_file: str) -> str:
     return str(calendars_path) + f"/{calendar_file}.ics"
 
 
-def get_start_day() -> date:
+def get_start_day() -> datetime:
     """
     Gets the starting date.
 
     Returns:
-        date: The starting date.
+        datetime: The starting date.
     """
     while True:
         try:
@@ -130,7 +130,8 @@ def get_start_day() -> date:
                 start_date = f"{
                     start_date_arr[0]}-{start_date_arr[1]}-{start_date_arr[2]}"
             else:
-                start_date = "07-15-2024"  # left in on purpose
+                today = date.today()
+                start_date = today.strftime("%m-%d-%Y")
 
             start_datetime = datetime.strptime(start_date, "%m-%d-%Y")
             start_datetime = EST.localize(start_datetime)  # Localize to EST
@@ -146,12 +147,12 @@ def get_start_day() -> date:
     return start_datetime
 
 
-def get_end_day() -> date:
+def get_end_day() -> datetime:
     """
     Gets the ending date.
 
     Returns:
-        date: The ending date.
+        datetime: The ending date.
     """
     while True:
         try:
@@ -163,11 +164,11 @@ def get_end_day() -> date:
                 end_date = f"{
                     end_date_arr[0]}-{end_date_arr[1]}-{end_date_arr[2]}"
             else:
-                end_date = "07-19-2024"  # left in on purpose
+                today = date.today()
+                end_date = (today + timedelta(weeks=1)).strftime("%m-%d-%Y")
 
             end_datetime = datetime.strptime(end_date, "%m-%d-%Y")
             end_datetime = EST.localize(end_datetime)  # Localize to EST
-            end_datetime += timedelta(days=1)
 
             break
         except ValueError as err:
@@ -372,31 +373,46 @@ def display_events(number_shown: int):
         display_event_details(event)
 
 
-def sum_durations():
+def sum_durations(list_events: list[dict]):
     """
     Method to sum the durations of the events of the same name (summary).
     """
     durations = defaultdict(timedelta)
 
-    for event in events:
+    for event in list_events:
         summary = event['summary']
         duration_str = event['duration']
 
-        # Parse the duration string into a timedelta object
-        hours, minutes, seconds = map(int, duration_str.split(':'))
+        # Debug: Print the duration string
+        # print(f"Processing event: '{summary}', Duration: {duration_str}")
+
+        # Parse the duration string into hours, minutes, and seconds
+        # Parse the duration string into hours, minutes, and seconds
+        try:
+            hours, minutes, seconds = map(int, duration_str.split(':'))
+        except ValueError as e:
+            print(f"Error parsing duration string '{
+                  duration_str}' for event '{summary}': {e}")
+            continue
+
         duration = timedelta(hours=hours, minutes=minutes, seconds=seconds)
+
+        # Debug: Print the parsed timedelta
+        # print(f"Parsed duration for '{summary}' as timedelta: {duration}\n")
 
         # Add the duration to the total for the corresponding summary
         durations[summary] += duration
 
-    # Print out the total duration for each summary
     for summary, total_duration in durations.items():
-        # Format the total duration to H:M:S
-        hours, remainder = divmod(total_duration.total_seconds(), 3600)
+        # Debug: Print the total_duration object
+        # print(f"Total duration for '{summary}': {total_duration}")
+
+        total_seconds = int(total_duration.total_seconds())
+        hours, remainder = divmod(total_seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
 
-        formatted_duration = f"{int(hours):02}:{int(minutes):02}"
-        formatted_duration += f":{int(seconds):02}"
+        # Format the total duration to H:M:S
+        formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}"
 
         print(f"The total duration of all events with summary '{
               summary}' is {formatted_duration}.")
@@ -427,7 +443,7 @@ def what_next(number_to_display: str):
             sys.exit(0)
 
         if ans == "sum":
-            sum_durations()
+            sum_durations(events)
 
         break
 
