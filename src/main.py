@@ -5,6 +5,7 @@ import os
 import sys
 from pathlib import Path
 from datetime import date, datetime, timedelta
+from collections import defaultdict
 import pytz  # type: ignore # pylint: disable=E0401
 from icalendar import Calendar  # type: ignore # pylint: disable=E0401
 import recurring_ical_events  # type: ignore # pylint: disable=E0401
@@ -27,6 +28,14 @@ def parse_ics(file_path: str, start: datetime, end: datetime) -> list[dict]:
     Parse the calendar file to extract events, handling both single
     occurrences and recurrence rules, and return them as a list
     of event dictionaries.
+
+    Args:
+        file_path (str): The path to the file being parsed.
+        start (datetime): The starting date to parse from.
+        end (datetime): The ending date to end parsing.
+
+    Returns:
+        list[dict]: A list of the events that were parsed from the file.
     """
     try:
         with open(file_path, 'rb') as f:
@@ -90,10 +99,16 @@ def parse_ics(file_path: str, start: datetime, end: datetime) -> list[dict]:
     return single_occurrence_events + events_list
 
 
-def get_cal_path(calendar_file: str):
+def get_cal_path(calendar_file: str) -> str:
     """
     Get's the calendar file and returns the path. Defaults to test calendar if
     no other calendar file is provided.
+
+    Args:
+        calendar_file (str): The calendar filename
+
+    Returns:
+        str: A path to the file.
     """
     calendars_path = (Path(__file__).parent / "calendars/").resolve()
     return str(calendars_path) + f"/{calendar_file}.ics"
@@ -102,6 +117,9 @@ def get_cal_path(calendar_file: str):
 def get_start_day() -> date:
     """
     Gets the starting date.
+
+    Returns:
+        date: The starting date.
     """
     while True:
         try:
@@ -131,6 +149,9 @@ def get_start_day() -> date:
 def get_end_day() -> date:
     """
     Gets the ending date.
+
+    Returns:
+        date: The ending date.
     """
     while True:
         try:
@@ -165,6 +186,10 @@ def get_calendar_file() -> tuple[str, datetime, datetime]:
     the starting date and ending date that they want to focus on and returns
     a tuple containing the data. If no path is found, the testing file will be
     used instead.
+
+    Returns:
+        tuple[str, datetime, datetime]: A tuple containing the filepath, the
+        starting date and ending date.
     """
     try:
         cal_file = input(
@@ -192,6 +217,14 @@ events = parse_ics(file_pathname, start_day, end_day)
 def get_events_between(start: date, end: date) -> tuple[int, list[dict]]:
     """
     Get's a list of the events between two dates.
+
+    Args:
+        start (date): A starting date object.
+        end (date): A ending date object.
+
+    Returns:
+        tuple[int, list[dict]]: A tuple containing the amount of events between
+        the staring and ending date as well as a list containing the events.
     """
     if start.tzinfo is None:
         start = EST.localize(start)
@@ -221,6 +254,12 @@ def get_events_between(start: date, end: date) -> tuple[int, list[dict]]:
 def format_datetime(dt: datetime) -> str:
     """
     Format a datetime object to a string in '%Y-%m-%d %H:%M:%S' format.
+
+    Args:
+        dt (datetime): A datetime object
+
+    Returns:
+        str: A formatted string of that datetime object.
     """
     return dt.strftime('%m-%d-%Y %H:%M:%S')
 
@@ -229,6 +268,12 @@ def remove_duplicate_events(events: list[dict]) -> list[dict]:
     # pylint: disable=W0621
     """
     Removes duplicate events based on summary, start time, and end time.
+
+    Args:
+        events (list[dict]): A list of event dictionaries.
+
+    Returns:
+        list[dict]: The list of events with duplicates removed.
     """
     seen = set()
     unique_events = []
@@ -259,9 +304,52 @@ num_events, events = get_events_between(start_day, end_day)
 # print(events)
 
 
+def sort_events(events: list[dict]) -> list[dict]:  # pylint: disable=W0621
+    """
+    Sorts a list of events in chronological order based on the 'dtstart' field,
+    ensuring all datetimes are converted to the specified timezone before
+    sorting.
+
+    Args:
+        events (list[dict]): A list of event dictionaries, each containing
+        'dtstart' and 'dtend' keys. timezone (pytz.timezone): The timezone
+        to convert all datetime objects to before sorting.
+
+    Returns:
+        list[dict]: The sorted list of events.
+    """
+    for event in events:
+        dtstart = event['dtstart']
+        dtend = event['dtend']
+
+        # Convert dtstart and dtend to the specified timezone (EST)
+        if dtstart.tzinfo:
+            dtstart = dtstart.astimezone(EST)
+        else:
+            dtstart = EST.localize(dtstart)
+        if dtend.tzinfo:
+            dtend = dtend.astimezone(EST)
+        else:
+            dtend = EST.localize(dtend)
+
+        event['dtstart'] = dtstart
+        event['dtend'] = dtend
+
+    # Sort events based on dtstart
+    events.sort(key=lambda e: e['dtstart'])
+
+    return events
+
+
+events = sort_events(events)
+
+
 def display_event_details(event: dict = None):  # pylint: disable=W0621
     """
     Method to display the event details.
+
+    Args:
+        event (dict): Event to be displayed.
     """
     print(f"Summary: {event['summary']}")
     print(f"Start: {format_datetime(event['dtstart'])}")
@@ -272,6 +360,10 @@ def display_event_details(event: dict = None):  # pylint: disable=W0621
 def display_events(number_shown: int):
     """
     Displays the specified number of events.
+
+    Args:
+        number_shown (int): The number of events to be shown.
+
     """
     if number_shown == 0:
         return
@@ -284,23 +376,30 @@ def sum_durations():
     """
     Method to sum the durations of the events of the same name (summary).
     """
-    total = timedelta()
+    durations = defaultdict(timedelta)
 
     for event in events:
-        time_obj = datetime.strptime(event["duration"], "%H:%M:%S")
+        summary = event['summary']
+        duration_str = event['duration']
 
-        time_duration = timedelta(
-            hours=time_obj.hour,
-            minutes=time_obj.minute,
-            seconds=time_obj.second
-        )
+        # Parse the duration string into a timedelta object
+        hours, minutes, seconds = map(int, duration_str.split(':'))
+        duration = timedelta(hours=hours, minutes=minutes, seconds=seconds)
 
-        total += time_duration
-    total_duration = (
-        datetime.min + total).strftime("%H:%M:%S")
+        # Add the duration to the total for the corresponding summary
+        durations[summary] += duration
 
-    print("The total duration of all " +
-          f"{num_events} events is {total_duration}.")
+    # Print out the total duration for each summary
+    for summary, total_duration in durations.items():
+        # Format the total duration to H:M:S
+        hours, remainder = divmod(total_duration.total_seconds(), 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        formatted_duration = f"{int(hours):02}:{int(minutes):02}"
+        formatted_duration += f":{int(seconds):02}"
+
+        print(f"The total duration of all events with summary '{
+              summary}' is {formatted_duration}.")
 
 
 def what_next(number_to_display: str):
@@ -333,7 +432,7 @@ def what_next(number_to_display: str):
         break
 
 
-def display_options():
+def main():
     """
     Display options and handles IO.
     """
@@ -342,6 +441,7 @@ def display_options():
     msg += "\n\tAn integer x - to view first x events\n\t"
     msg += "Blank - Skip viewing\n\n"
     msg += "Answer: "
+    
     while True:
         ans = input(msg).lower().strip()
 
@@ -373,10 +473,5 @@ def display_options():
         msg += "Answer: "
 
 
-display_options()
-# print(f"There are {num_events} events.")
-# print("They are:")
-# for event in events:
-#     display_event_details(event)
-
-# TODO: Sort the events in chronological order
+if __name__ == "__main__":
+    main()
