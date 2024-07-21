@@ -1,5 +1,5 @@
 # Don't want to upload my calendars
-*_mycal.ics
+!*.ics
 
 # Dumb macOS
 .DS_Store
