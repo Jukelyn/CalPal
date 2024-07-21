@@ -432,7 +432,7 @@ def what_next(number_to_display: str):
         break
 
 
-def main():
+def display_options():
     """
     Display options and handles IO.
     """
@@ -441,7 +441,7 @@ def main():
     msg += "\n\tAn integer x - to view first x events\n\t"
     msg += "Blank - Skip viewing\n\n"
     msg += "Answer: "
-    
+
     while True:
         ans = input(msg).lower().strip()
 
@@ -473,5 +473,4 @@ def main():
         msg += "Answer: "
 
 
-if __name__ == "__main__":
-    main()
+display_options()
