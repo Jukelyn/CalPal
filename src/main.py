@@ -1,11 +1,10 @@
 """
 Modules used for this program, self explanatory...
 """
+import os
 import sys
 from pathlib import Path
-# import json
 from datetime import date, datetime, timedelta
-# from dateutil.parser import parse as parse_dt
 import pytz  # type: ignore # pylint: disable=E0401
 from icalendar import Calendar  # type: ignore # pylint: disable=E0401
 import recurring_ical_events  # type: ignore # pylint: disable=E0401
@@ -29,8 +28,13 @@ def parse_ics(file_path: str, start: datetime, end: datetime) -> list[dict]:
     occurrences and recurrence rules, and return them as a list
     of event dictionaries.
     """
-    with open(file_path, 'rb') as f:
-        calendar = Calendar.from_ical(f.read())
+    try:
+        with open(file_path, 'rb') as f:
+            calendar = Calendar.from_ical(f.read())
+    except FileNotFoundError:
+        print("File not found. Check if file exists and also the spelling. " +
+              f"File structure should be:\n{FILE_STRUCT}")
+        sys.exit(1)
 
     events_list = []
     single_occurrence_events = []
@@ -89,7 +93,7 @@ def parse_ics(file_path: str, start: datetime, end: datetime) -> list[dict]:
 def get_cal_path(calendar_file: str):
     """
     Get's the calendar file and returns the path. Defaults to test calendar if
-    no other calendar file is provided
+    no other calendar file is provided.
     """
     calendars_path = (Path(__file__).parent / "calendars/").resolve()
     return str(calendars_path) + f"/{calendar_file}.ics"
@@ -97,7 +101,7 @@ def get_cal_path(calendar_file: str):
 
 def get_start_day() -> date:
     """
-    Gets the starting date
+    Gets the starting date.
     """
     while True:
         try:
@@ -126,7 +130,7 @@ def get_start_day() -> date:
 
 def get_end_day() -> date:
     """
-    Gets the end date
+    Gets the ending date.
     """
     while True:
         try:
@@ -255,40 +259,98 @@ num_events, events = get_events_between(start_day, end_day)
 # print(events)
 
 
+def display_event_details(event: dict = None):  # pylint: disable=W0621
+    """
+    Method to display the event details.
+    """
+    print(f"Summary: {event['summary']}")
+    print(f"Start: {format_datetime(event['dtstart'])}")
+    print(f"End: {format_datetime(event['dtend'])}")
+    print(f"Duration: {event['duration']}\n")
+
+
 def display_events(number_shown: int):
     """
-    Displays the specified number of events
+    Displays the specified number of events.
     """
-    print(number_shown)
-    return number_shown
+    if number_shown == 0:
+        return
+
+    for event in events[:number_shown]:  # Shows the first two events
+        display_event_details(event)
 
 
-def what_next():
+def sum_durations():
     """
-    Method to determine what to do with the events besides viewing them.
+    Method to sum the durations of the events of the same name (summary).
+    """
+    total = timedelta()
+
+    for event in events:
+        time_obj = datetime.strptime(event["duration"], "%H:%M:%S")
+
+        time_duration = timedelta(
+            hours=time_obj.hour,
+            minutes=time_obj.minute,
+            seconds=time_obj.second
+        )
+
+        total += time_duration
+    total_duration = (
+        datetime.min + total).strftime("%H:%M:%S")
+
+    print("The total duration of all " +
+          f"{num_events} events is {total_duration}.")
+
+
+def what_next(number_to_display: str):
+    """
+    Method to determine what to do with the events after viewing them.
     Function should be called when the user chooses to display any number
-    of events, including  0 (skip viewing)
+    of events, including  0 (skip viewing).
     """
-    return
+    if number_to_display == "all":
+        number_to_display = num_events
 
+    display_events(int(number_to_display))
 
-def display_options():
-    """
-    Display options and handle them
-    """
-    msg = f"\nThere are {num_events} events, do you want to see them all?"
-    msg += f"\nOptions:\n\tAll - to view all {num_events} events"
-    msg += "\n\tAn integer x - to view x events\n\tBlank - Skip viewing\n\n"
+    msg = "Would you like to continue?"
+    msg += f"\nOptions:\n\tSum - Sum all {num_events} event durations"
+    msg += "\n\tBlank - Exit\n\n"
     msg += "Answer: "
     while True:
         ans = input(msg).lower().strip()
 
         if not ans:  # blank
-            print("blank")
+            os.system('cls' if os.name == 'nt' else 'clear')
+
+            print("Goodbye, exiting...")
+            sys.exit(0)
+
+        if ans == "sum":
+            sum_durations()
+
+        break
+
+
+def display_options():
+    """
+    Display options and handles IO.
+    """
+    msg = f"\nThere are {num_events} events, do you want to see them all?"
+    msg += f"\nOptions:\n\tAll - to view all {num_events} events"
+    msg += "\n\tAn integer x - to view first x events\n\t"
+    msg += "Blank - Skip viewing\n\n"
+    msg += "Answer: "
+    while True:
+        ans = input(msg).lower().strip()
+
+        if not ans:  # blank
+            what_next("0")
             break
 
         if ans == "all":
-            print("all")
+            what_next(ans)
             break
 
         try:
@@ -298,28 +360,17 @@ def display_options():
                 msg = "New answer: "
                 continue
             else:
-                display_events(ans)
+                what_next(ans)
                 break
         except ValueError:
             pass
 
         # At this point it is not valid
-        print("You must select one of the available options.")
+        print("\n\nYou must select one of the available options.")
         msg = f"\nOptions:\n\tAll - to view all {num_events} events"
-        msg += "\n\tAn integer x - to view x events\n\tBlank - Skip viewing"
-        msg += "\n\nAnswer: "
-
-    what_next()
-
-
-def display_event_details(event: dict = None):  # pylint: disable=W0621
-    """
-    Method to display the event details
-    """
-    print(f"Summary: {event['summary']}")
-    print(f"Start: {format_datetime(event['dtstart'])}")
-    print(f"End: {format_datetime(event['dtend'])}")
-    print(f"Duration: {event['duration']}\n")
+        msg += "\n\tAn integer x - to view first x events\n\t"
+        msg += "Blank - Skip viewing\n\n"
+        msg += "Answer: "
 
 
 display_options()
@@ -329,4 +380,3 @@ display_options()
 #     display_event_details(event)
 
 # TODO: Sort the events in chronological order
-# TODO: Add functionality to sum up event durations that have same summary
