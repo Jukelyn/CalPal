@@ -1,6 +1,6 @@
-# Don't want to upload my calendars
-!testing*.ics
+# Ignore all .ics files except for test files
 *.ics
+!testing*.ics
 
 # Dumb macOS
 .DS_Store
