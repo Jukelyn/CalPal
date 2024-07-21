@@ -17,6 +17,9 @@ FILE_STRUCT = """
             ├─ calendars/
             │   ├─ Calendar1.ics
             │   ├─ Calendar2.ics
+            │   ├─ ...
+            │   ├─ testing1.ics
+            │   ├─ testing2.ics
             │   └─ ...
             └─ main.py
 """
@@ -123,12 +126,11 @@ def get_start_day() -> datetime:
     """
     while True:
         try:
-            start_date_in = input("Enter starting date in MM DD YYYY format: ")
+            start_date_in = input("Enter starting date in MM DD YY format: ")
             if start_date_in:
-                start_date_arr = start_date_in.split()
+                date_arr = start_date_in.split()
 
-                start_date = f"{
-                    start_date_arr[0]}-{start_date_arr[1]}-{start_date_arr[2]}"
+                start_date = f"{date_arr[0]}-{date_arr[1]}-20{date_arr[2]}"
             else:
                 today = date.today()
                 start_date = today.strftime("%m-%d-%Y")
@@ -156,13 +158,13 @@ def get_end_day() -> datetime:
     """
     while True:
         try:
-            end_date_in = input("Enter ending date in MM DD YYYY format: ")
+            end_date_in = input("Enter ending date in MM DD YY format: ")
 
             if end_date_in:
-                end_date_arr = end_date_in.split()
+                date_arr = end_date_in.split()
 
                 end_date = f"{
-                    end_date_arr[0]}-{end_date_arr[1]}-{end_date_arr[2]}"
+                    date_arr[0]}-{date_arr[1]}-20{date_arr[2]}"
             else:
                 today = date.today()
                 end_date = (today + timedelta(weeks=1)).strftime("%m-%d-%Y")
@@ -192,15 +194,26 @@ def get_calendar_file() -> tuple[str, datetime, datetime]:
         tuple[str, datetime, datetime]: A tuple containing the filepath, the
         starting date and ending date.
     """
-    try:
-        cal_file = input(
-            "Enter the calendar file's name (without extension): ")
-        file_pathname = get_cal_path(  # pylint: disable=W0621
-            cal_file) if cal_file else get_cal_path("testing")
-    except FileNotFoundError:
-        print("File not found. Check if file exists and also the spelling. " +
-              f"File structure should be:\n{FILE_STRUCT}")
-        sys.exit(1)
+    while True:
+        try:
+            cal_file = input(
+                "Enter the calendar file's name (without extension): ")
+
+            if not cal_file:
+                num_test_files = 2
+                num_test = input(f"There are {num_test_files} test files " +
+                                 "available, enter a number to use one: ")
+                cal_file = "testing" + num_test
+
+            file_pathname = get_cal_path(cal_file)  # pylint: disable=W0621
+            if not os.path.exists(file_pathname):
+                raise FileNotFoundError
+            break
+        except ValueError:
+            pass
+        except FileNotFoundError:
+            print("File not found. Check if file exists and also the " +
+                  f"spelling. File structure should be:\n{FILE_STRUCT}")
 
     start_day = get_start_day()  # pylint: disable=W0621
     end_day = get_end_day()  # pylint: disable=W0621
