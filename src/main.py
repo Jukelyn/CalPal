@@ -1,10 +1,12 @@
 """
 Modules used for this program, self explanatory...
 """
+import glob
 import os
 import sys
 from pathlib import Path
 from datetime import date, datetime, timedelta
+from time import sleep
 from collections import defaultdict
 import pytz  # type: ignore # pylint: disable=E0401
 from icalendar import Calendar  # type: ignore # pylint: disable=E0401
@@ -24,6 +26,15 @@ FILE_STRUCT = """
             └─ main.py
 """
 MANY_EVENTS = 5
+CALENDARS_DIR = (Path(__file__).parent / "calendars/").resolve()
+
+
+def exit_program():  # pylint: disable=C0116
+    print("Goodbye, exiting...")
+    sleep(1)
+
+    os.system('cls' if os.name == 'nt' else 'clear')
+    sys.exit(0)
 
 
 def parse_ics(file_path: str, start: datetime, end: datetime) -> list[dict]:
@@ -46,7 +57,7 @@ def parse_ics(file_path: str, start: datetime, end: datetime) -> list[dict]:
     except FileNotFoundError:
         print("File not found. Check if file exists and also the spelling. " +
               f"File structure should be:\n{FILE_STRUCT}")
-        sys.exit(1)
+        exit_program()
 
     events_list = []
     single_occurrence_events = []
@@ -113,8 +124,7 @@ def get_cal_path(calendar_file: str) -> str:
     Returns:
         str: A path to the file.
     """
-    calendars_path = (Path(__file__).parent / "calendars/").resolve()
-    return str(calendars_path) + f"/{calendar_file}.ics"
+    return str(CALENDARS_DIR) + f"/{calendar_file}.ics"
 
 
 def get_start_day() -> datetime:
@@ -183,6 +193,22 @@ def get_end_day() -> datetime:
     return end_datetime
 
 
+def get_num_test_files():
+    """
+    Gets the nummber of testing .ics files available.
+
+    Returns:
+        int: Number of available files.
+    """
+    pattern = os.path.join(CALENDARS_DIR, 'testing[0-9]*.ics')
+    matching_files = glob.glob(pattern)
+
+    return len(matching_files)
+
+
+NUM_TEST_FILES = get_num_test_files()
+
+
 def get_calendar_file() -> tuple[str, datetime, datetime]:
     """
     Get's the calendar file path, handles errors if not found, asks user for
@@ -200,8 +226,7 @@ def get_calendar_file() -> tuple[str, datetime, datetime]:
                 "Enter the calendar file's name (without extension): ")
 
             if not cal_file:
-                num_test_files = 2
-                num_test = input(f"There are {num_test_files} test files " +
+                num_test = input(f"There are {NUM_TEST_FILES} test files " +
                                  "available, enter a number to use one: ")
                 cal_file = "testing" + num_test
 
@@ -389,6 +414,9 @@ def display_events(number_shown: int):
 def sum_durations(list_events: list[dict]):
     """
     Method to sum the durations of the events of the same name (summary).
+
+    Args:
+        list_events (list[dict]): The list of events being summed.
     """
     durations = defaultdict(timedelta)
 
@@ -430,19 +458,24 @@ def sum_durations(list_events: list[dict]):
         print(f"The total duration of all events with summary '{
               summary}' is {formatted_duration}.")
 
+    what_next()
 
-def what_next(number_to_display: str):
+
+def what_next(number_to_display: str = "0"):
     """
     Method to determine what to do with the events after viewing them.
     Function should be called when the user chooses to display any number
     of events, including  0 (skip viewing).
+
+    Args:
+        number_to_display (str): The number of events to be shown.
     """
     if number_to_display == "all":
         number_to_display = num_events
 
     display_events(int(number_to_display))
 
-    msg = "Would you like to continue?"
+    msg = "\nWould you like to continue?"
     msg += f"\nOptions:\n\tSum - Sum all {num_events} event durations"
     msg += "\n\tBlank - Exit\n\n"
     msg += "Answer: "
@@ -450,11 +483,7 @@ def what_next(number_to_display: str):
         ans = input(msg).lower().strip()
 
         if not ans:  # blank
-            os.system('cls' if os.name == 'nt' else 'clear')
-
-            print("Goodbye, exiting...")
-            sys.exit(0)
-
+            exit_program()
         if ans == "sum":
             sum_durations(events)
 
