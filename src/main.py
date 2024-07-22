@@ -29,12 +29,14 @@ FILE_STRUCT = """
 MANY_EVENTS = 5
 CALENDARS_DIR = (Path(__file__).parent / "calendars/").resolve()
 
+def clear_terminal() -> None: # pylint: disable=C0116
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 def exit_program():  # pylint: disable=C0116
     print("Goodbye, exiting...")
     sleep(1)
 
-    os.system('cls' if os.name == 'nt' else 'clear')
+    clear_terminal()
     sys.exit(0)
 
 
@@ -241,7 +243,10 @@ def get_calendar_file() -> tuple[str, datetime, datetime]:
             print("File not found. Check if file exists and also the " +
                   f"spelling. File structure should be:\n{FILE_STRUCT}")
 
+    clear_terminal()
+    print("\nThe starting date will default to today if left blank.")
     start_day = get_start_day()  # pylint: disable=W0621
+    print("\nThe ending date will default to a week from today if left blank.")
     end_day = get_end_day()  # pylint: disable=W0621
 
     return (file_pathname, start_day, end_day)
@@ -353,6 +358,7 @@ while num_events == 0:
         print("Invalid response.")
         continue
 
+    clear_terminal()
     new_start_day = get_start_day()
     new_end_day = get_end_day()
 
