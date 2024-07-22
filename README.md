@@ -26,6 +26,8 @@ Default dates (leaving blank when asked) are from the current day to a week from
 More stuff TBA...
 
 ## Test .ics files
+I provided some test files to be used as a demo mainly because my actual calendar had too many events for me to get a clear picture while troubleshooting.
+
 `testing1.ics` has some events from July 15 to July 19, 2024
 
 `testing2.ics` has some events from July 22 to August 2, 2024
