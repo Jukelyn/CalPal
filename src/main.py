@@ -8,6 +8,7 @@ from pathlib import Path
 from datetime import date, datetime, timedelta
 from time import sleep
 from collections import defaultdict
+from typing import Dict, Optional
 import pytz  # type: ignore # pylint: disable=E0401
 from icalendar import Calendar  # type: ignore # pylint: disable=E0401
 import recurring_ical_events  # type: ignore # pylint: disable=E0401
@@ -153,7 +154,7 @@ def get_start_day() -> datetime:
             if str(err) == "day is out of range for month":
                 print("Enter a valid date.")
                 continue
-            print("Must be a valid date in the correct format, MM-DD-YYYY.")
+            print("Must be a valid date in the correct format, MM DD YY.")
             continue
 
     return start_datetime
@@ -187,7 +188,7 @@ def get_end_day() -> datetime:
             if str(err) == "day is out of range for month":
                 print("Enter a valid date.")
                 continue
-            print("Must be a valid date in the correct format, M-D-YYYY.")
+            print("Must be a valid date in the correct format, MM DD YY.")
             continue
 
     return end_datetime
@@ -253,13 +254,13 @@ events = parse_ics(file_pathname, start_day, end_day)
 # print(events_json)
 
 
-def get_events_between(start: date, end: date) -> tuple[int, list[dict]]:
+def get_events_between(start: datetime, end: datetime) -> tuple[int, list[dict]]:
     """
     Get's a list of the events between two dates.
 
     Args:
-        start (date): A starting date object.
-        end (date): A ending date object.
+        start (datetime): A starting datetime object.
+        end (datetime): A ending datetime object.
 
     Returns:
         tuple[int, list[dict]]: A tuple containing the amount of events between
@@ -339,6 +340,25 @@ def remove_duplicate_events(events: list[dict]) -> list[dict]:
 
 
 num_events, events = get_events_between(start_day, end_day)
+if num_events == 0:
+    print(f"There are no events to view from {start_day.strftime("%m-%d-%Y")} to {end_day.strftime("%m-%d-%Y")}.\n")
+
+while num_events == 0:
+    keep_going = input("Enter a new date range? (\"y\" to proceed): ").lower()
+
+    if not keep_going or keep_going == "n":
+        exit_program()
+
+    if keep_going != "y":
+        print("Invalid response.")
+        continue
+
+    new_start_day = get_start_day()
+    new_end_day = get_end_day()
+
+    events = parse_ics(file_pathname, new_start_day, new_end_day)
+    num_events, events = get_events_between(new_start_day, new_end_day)
+
 # print(len(events))
 # print(events)
 
@@ -350,7 +370,7 @@ def sort_events(events: list[dict]) -> list[dict]:  # pylint: disable=W0621
     sorting.
 
     Args:
-        events (list[dict]): A list of event dictionaries, each containing
+        events (list[]): A list of event dictionaries, each containing
         'dtstart' and 'dtend' keys. timezone (pytz.timezone): The timezone
         to convert all datetime objects to before sorting.
 
@@ -383,20 +403,23 @@ def sort_events(events: list[dict]) -> list[dict]:  # pylint: disable=W0621
 events = sort_events(events)
 
 
-def display_event_details(event: dict = None):  # pylint: disable=W0621
+def display_event_details(event: Optional[dict] = None) -> None:  # pylint: disable=W0621
     """
     Method to display the event details.
 
     Args:
-        event (dict): Event to be displayed.
+        event (Optional[dict]): Event to be displayed.
     """
+    if event is None:
+        return
+
     print(f"Summary: {event['summary']}")
     print(f"Start: {format_datetime(event['dtstart'])}")
     print(f"End: {format_datetime(event['dtend'])}")
     print(f"Duration: {event['duration']}\n")
 
 
-def display_events(number_shown: int):
+def display_events(number_shown: int) -> None:
     """
     Displays the specified number of events.
 
@@ -411,14 +434,14 @@ def display_events(number_shown: int):
         display_event_details(event)
 
 
-def sum_durations(list_events: list[dict]):
+def sum_durations(list_events: list[dict]) -> None:
     """
     Method to sum the durations of the events of the same name (summary).
 
     Args:
         list_events (list[dict]): The list of events being summed.
     """
-    durations = defaultdict(timedelta)
+    durations: defaultdict[None, timedelta] = defaultdict(timedelta)
 
     for event in list_events:
         summary = event['summary']
@@ -461,7 +484,7 @@ def sum_durations(list_events: list[dict]):
     what_next()
 
 
-def what_next(number_to_display: str = "0"):
+def what_next(number_to_display: str = "0") -> None:
     """
     Method to determine what to do with the events after viewing them.
     Function should be called when the user chooses to display any number
@@ -471,7 +494,7 @@ def what_next(number_to_display: str = "0"):
         number_to_display (str): The number of events to be shown.
     """
     if number_to_display == "all":
-        number_to_display = num_events
+        number_to_display = str(num_events)
 
     display_events(int(number_to_display))
 
@@ -490,11 +513,11 @@ def what_next(number_to_display: str = "0"):
         break
 
 
-def display_options():
+def display_options() -> None:
     """
     Display options and handles IO.
     """
-    msg = f"\nThere are {num_events} events, do you want to see them all?"
+    msg = f"\nThere are {num_events} events between these dates, do you want to see them all?"
     msg += f"\nOptions:\n\tAll - to view all {num_events} events"
     msg += "\n\tAn integer x - to view first x events\n\t"
     msg += "Blank - Skip viewing\n\n"
@@ -512,8 +535,8 @@ def display_options():
             break
 
         try:
-            ans = int(ans)
-            if ans not in range(1, num_events + 1):
+            ans_int = int(ans)
+            if ans_int not in range(1, num_events + 1):
                 print(f"You must enter a number 1 to {num_events}.\n")
                 msg = "New answer: "
                 continue
