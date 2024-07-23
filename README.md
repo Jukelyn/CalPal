@@ -1,5 +1,5 @@
-# Calendar Parser
-This program is designed to parse `.ics` calendar files, extract event details, handle recurring events, and perform various operations on the extracted data, such as sorting events by start time and summing event durations. The program is intended for users who need to manage and analyze calendar events within a specified date range.
+# CalPal
+CalPal a program that is designed to parse `.ics` calendar files, extract event details, handle recurring events, and perform various operations on the extracted data, such as sorting events by start time and summing event durations. The program is intended for users who need to manage and analyze calendar events within a specified date range.
 
 ## Features
 
