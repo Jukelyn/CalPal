@@ -160,6 +160,8 @@ def get_start_day() -> datetime:
             start_datetime = EST.localize(start_datetime)  # Localize to EST
 
             break
+        except IndexError:
+            print("Must be a valid date in the correct format, MM DD YY.")
         except ValueError as err:
             if str(err) == "day is out of range for month":
                 print("Enter a valid date.")
@@ -194,6 +196,8 @@ def get_end_day() -> datetime:
             end_datetime = EST.localize(end_datetime)  # Localize to EST
 
             break
+        except IndexError:
+            print("Must be a valid date in the correct format, MM DD YY.")
         except ValueError as err:
             if str(err) == "day is out of range for month":
                 print("Enter a valid date.")
@@ -356,28 +360,48 @@ def remove_duplicate_events(events: list[dict]) -> list[dict]:
     return unique_events
 
 
-num_events, events = get_events_between(start_day, end_day)
-if num_events == 0:
-    print(f"There are no events to view from {start_day.strftime(
-        "%m-%d-%Y")} to {end_day.strftime("%m-%d-%Y")}.\n")
+def view_events_in_range(start: datetime,
+                         end: datetime,
+                         path: str) -> tuple[int, list[dict]]:
+    """
+    Encapsulates the logic for checking if there are events within
+    the given date range and prompting the user to enter a new date
+    range if none are found.
 
-while num_events == 0:
-    keep_going = input("Enter a new date range? (\"y\" to proceed): ").lower()
+    Args:
+        start (datetime): The starting datetime
+        end (datetime): The ending datetime
+        path (str): The ics file path
 
-    if not keep_going or keep_going == "n":
-        exit_program()
+    Returns:
+        tuple[int, list[dict]]: Tuple with the number of events and the events
+    """
+    number_events, list_events = get_events_between(start, end)
+    if number_events == 0:
+        print(f"There are no events to view from {start.strftime(
+            "%m-%d-%Y")} to {end.strftime("%m-%d-%Y")}.\n")
 
-    if keep_going != "y":
-        print("Invalid response.")
-        continue
+    while number_events == 0:
+        keep_going = input(
+            "Enter a new date range? (\"y\" to proceed): ").lower()
 
-    clear_terminal()
-    new_start_day = get_start_day()
-    new_end_day = get_end_day()
+        if not keep_going or keep_going == "n":
+            exit_program()
 
-    events = parse_ics(file_pathname, new_start_day, new_end_day)
-    num_events, events = get_events_between(new_start_day, new_end_day)
+        if keep_going != "y":
+            print("Invalid response.")
+            continue
 
+        clear_terminal()
+        new_start = get_start_day()
+        new_end = get_end_day()
+
+        list_events = parse_ics(path, new_start, new_end)
+        number_events, list_events = get_events_between(new_start, new_end)
+    return (number_events, list_events)
+
+
+num_events, events = view_events_in_range(start_day, end_day, file_pathname)
 # print(len(events))
 # print(events)
 
@@ -521,11 +545,14 @@ def what_next(number_to_display: str = "0") -> None:
     msg += f"\nOptions:\n\tSum - Sum all {num_events} event durations"
     msg += "\n\tBlank - Exit\n\n"
     msg += "Answer: "
+
+    options = ["sum"]
     while True:
         ans = input(msg).lower().strip()
 
-        if not ans:  # blank
+        if ans not in options:  # blank
             exit_program()
+
         if ans == "sum":
             sum_durations(events)
 
