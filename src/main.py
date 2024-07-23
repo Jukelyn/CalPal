@@ -13,7 +13,7 @@ import pytz  # type: ignore # pylint: disable=E0401
 from icalendar import Calendar  # type: ignore # pylint: disable=E0401
 import recurring_ical_events  # type: ignore # pylint: disable=E0401
 
-EST = pytz.timezone('US/Eastern')
+TIMEZONE = pytz.timezone('US/Eastern')
 FILE_STRUCT = """
     Calendar-Parser/
         └─ src/
@@ -66,7 +66,8 @@ def parse_ics(file_path: str, start: datetime, end: datetime) -> list[dict]:
         with open(file_path, 'rb') as f:
             calendar = Calendar.from_ical(f.read())
     except FileNotFoundError:
-        print("File not found. Check if file exists and also the spelling. " +
+        print(f"File {file_path} not found." +
+              " Check if file exists and also the spelling. " +
               f"File structure should be:\n{FILE_STRUCT}")
         exit_program()
 
@@ -80,13 +81,13 @@ def parse_ics(file_path: str, start: datetime, end: datetime) -> list[dict]:
             summary = str(component.get('summary'))
 
             if dtstart.tzinfo:
-                dtstart = dtstart.astimezone(EST)
+                dtstart = dtstart.astimezone(TIMEZONE)
             else:
-                dtstart = EST.localize(dtstart)
+                dtstart = TIMEZONE.localize(dtstart)
             if dtend.tzinfo:
-                dtend = dtend.astimezone(EST)
+                dtend = dtend.astimezone(TIMEZONE)
             else:
-                dtend = EST.localize(dtend)
+                dtend = TIMEZONE.localize(dtend)
 
             duration = dtend - dtstart
 
@@ -157,7 +158,7 @@ def get_start_day() -> datetime:
                 start_date = today.strftime("%m-%d-%Y")
 
             start_datetime = datetime.strptime(start_date, "%m-%d-%Y")
-            start_datetime = EST.localize(start_datetime)  # Localize to EST
+            start_datetime = TIMEZONE.localize(start_datetime)
 
             break
         except IndexError:
@@ -193,7 +194,7 @@ def get_end_day() -> datetime:
                 end_date = (today + timedelta(weeks=1)).strftime("%m-%d-%Y")
 
             end_datetime = datetime.strptime(end_date, "%m-%d-%Y")
-            end_datetime = EST.localize(end_datetime)  # Localize to EST
+            end_datetime = TIMEZONE.localize(end_datetime)
 
             break
         except IndexError:
@@ -241,7 +242,7 @@ def get_calendar_file() -> tuple[str, datetime, datetime]:
     while True:
         try:
             cal_file = input(
-                "Enter the calendar file's name (without extension): ")
+                "Enter the calendar file's name (blank for test files): ")
 
             if not cal_file:
                 num_test = input(f"There are {NUM_TEST_FILES} test files " +
@@ -255,7 +256,9 @@ def get_calendar_file() -> tuple[str, datetime, datetime]:
         except ValueError:
             pass
         except FileNotFoundError:
-            print("File not found. Check if file exists and also the " +
+            clear_terminal()
+            print(f"Testing file {cal_file}.ics not found." +
+                  " Check if file exists and also the " +
                   f"spelling. File structure should be:\n{FILE_STRUCT}")
 
     clear_terminal()
@@ -288,9 +291,9 @@ def get_events_between(start: datetime,
         the staring and ending date as well as a list containing the events.
     """
     if start.tzinfo is None:
-        start = EST.localize(start)
+        start = TIMEZONE.localize(start)
     if end.tzinfo is None:
-        end = EST.localize(end)
+        end = TIMEZONE.localize(end)
 
     events_between = []  # pylint: disable=W0621
 
@@ -299,9 +302,9 @@ def get_events_between(start: datetime,
         event_end = event['dtend']
 
         if event_start.tzinfo is None:
-            event_start = EST.localize(event_start)
+            event_start = TIMEZONE.localize(event_start)
         if event_end.tzinfo is None:
-            event_end = EST.localize(event_end)
+            event_end = TIMEZONE.localize(event_end)
 
         if start <= event_start <= end and start <= event_end <= end:
             # print(f"Event {num_events}: {event}, {event['duration']}")
@@ -424,15 +427,15 @@ def sort_events(events: list[dict]) -> list[dict]:  # pylint: disable=W0621
         dtstart = event['dtstart']
         dtend = event['dtend']
 
-        # Convert dtstart and dtend to the specified timezone (EST)
+        # Convert dtstart and dtend to the specified timezone (TIMEZONE)
         if dtstart.tzinfo:
-            dtstart = dtstart.astimezone(EST)
+            dtstart = dtstart.astimezone(TIMEZONE)
         else:
-            dtstart = EST.localize(dtstart)
+            dtstart = TIMEZONE.localize(dtstart)
         if dtend.tzinfo:
-            dtend = dtend.astimezone(EST)
+            dtend = dtend.astimezone(TIMEZONE)
         else:
-            dtend = EST.localize(dtend)
+            dtend = TIMEZONE.localize(dtend)
 
         event['dtstart'] = dtstart
         event['dtend'] = dtend
