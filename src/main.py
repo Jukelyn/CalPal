@@ -8,7 +8,7 @@ from pathlib import Path
 from datetime import date, datetime, timedelta
 from time import sleep
 from collections import defaultdict
-from typing import Dict, Optional
+from typing import Optional
 import pytz  # type: ignore # pylint: disable=E0401
 from icalendar import Calendar  # type: ignore # pylint: disable=E0401
 import recurring_ical_events  # type: ignore # pylint: disable=E0401
@@ -29,10 +29,18 @@ FILE_STRUCT = """
 MANY_EVENTS = 5
 CALENDARS_DIR = (Path(__file__).parent / "calendars/").resolve()
 
-def clear_terminal() -> None: # pylint: disable=C0116
+
+def clear_terminal() -> None:
+    """
+    Clears the terminal for cleaner outputting
+    """
     os.system('cls' if os.name == 'nt' else 'clear')
 
-def exit_program():  # pylint: disable=C0116
+
+def exit_program():
+    """
+    Exit's the program.
+    """
     print("Goodbye, exiting...")
     sleep(1)
 
@@ -219,6 +227,9 @@ def get_calendar_file() -> tuple[str, datetime, datetime]:
     a tuple containing the data. If no path is found, the testing file will be
     used instead.
 
+    Raises:
+        FileNotFoundError: If the file is not found.
+
     Returns:
         tuple[str, datetime, datetime]: A tuple containing the filepath, the
         starting date and ending date.
@@ -259,7 +270,8 @@ events = parse_ics(file_pathname, start_day, end_day)
 # print(events_json)
 
 
-def get_events_between(start: datetime, end: datetime) -> tuple[int, list[dict]]:
+def get_events_between(start: datetime,
+                       end: datetime) -> tuple[int, list[dict]]:
     """
     Get's a list of the events between two dates.
 
@@ -346,7 +358,8 @@ def remove_duplicate_events(events: list[dict]) -> list[dict]:
 
 num_events, events = get_events_between(start_day, end_day)
 if num_events == 0:
-    print(f"There are no events to view from {start_day.strftime("%m-%d-%Y")} to {end_day.strftime("%m-%d-%Y")}.\n")
+    print(f"There are no events to view from {start_day.strftime(
+        "%m-%d-%Y")} to {end_day.strftime("%m-%d-%Y")}.\n")
 
 while num_events == 0:
     keep_going = input("Enter a new date range? (\"y\" to proceed): ").lower()
@@ -409,12 +422,12 @@ def sort_events(events: list[dict]) -> list[dict]:  # pylint: disable=W0621
 events = sort_events(events)
 
 
-def display_event_details(event: Optional[dict] = None) -> None:  # pylint: disable=W0621
+def display_event_details(event: Optional[dict] = None) -> None:
     """
     Method to display the event details.
 
     Args:
-        event (Optional[dict]): Event to be displayed.
+        event (Optional[dict]): Event to be displayed. Defaults to None.
     """
     if event is None:
         return
@@ -431,7 +444,6 @@ def display_events(number_shown: int) -> None:
 
     Args:
         number_shown (int): The number of events to be shown.
-
     """
     if number_shown == 0:
         return
@@ -497,7 +509,8 @@ def what_next(number_to_display: str = "0") -> None:
     of events, including  0 (skip viewing).
 
     Args:
-        number_to_display (str): The number of events to be shown.
+        number_to_display (str): The number of events to be shown. Defaults to
+        "0".
     """
     if number_to_display == "all":
         number_to_display = str(num_events)
@@ -523,7 +536,8 @@ def display_options() -> None:
     """
     Display options and handles IO.
     """
-    msg = f"\nThere are {num_events} events between these dates, do you want to see them all?"
+    msg = f"\nThere are {
+        num_events} events between these dates, do you want to see them all?"
     msg += f"\nOptions:\n\tAll - to view all {num_events} events"
     msg += "\n\tAn integer x - to view first x events\n\t"
     msg += "Blank - Skip viewing\n\n"
@@ -533,7 +547,7 @@ def display_options() -> None:
         ans = input(msg).lower().strip()
 
         if not ans:  # blank
-            what_next("0")
+            what_next()
             break
 
         if ans == "all":
