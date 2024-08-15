@@ -205,6 +205,7 @@ end_day = get_end_day(start_day)
 
 
 def parse_ics(file_path: str, start: datetime, end: datetime) -> list[dict]:
+    # pylint: disable=R0914
     """
     Parse the calendar file to extract events, handling both single
     occurrences and recurrence rules, and return them as a list

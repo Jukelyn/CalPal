@@ -7,8 +7,8 @@ CalPal a program that is designed to parse `.ics` calendar files, extract event 
    - The program reads and parses `.ics` calendar files to extract event details.
    - Handles both single occurrence and recurring events using the `icalendar` and `recurring_ical_events` modules.
 2. Timezone Handling
-   - Ensures all datetime objects are consistent and localized to a specified timezone. Currently only supporting EST.
-   - Converts datetime objects to the EST timezone before performing operations.
+   - Ensures all datetime objects are consistent and localized to the local timezone.
+   - Converts datetime objects to the local timezone before performing operations.
 3. Sorting Events
    - Sorts events chronologically based on their start time (`dtstart`).
 4. Summing Event Durations
@@ -46,6 +46,6 @@ I provided some test files to be used as a demo mainly because my actual calenda
 `testing3.ics` is a combination of `testing1.ics` and `testing2.ics`
 
 ## Upcoming Features
-- More timezone options
+- Changing timezone options
 - More options for what to do with the events
 - Maybe a GUI...
