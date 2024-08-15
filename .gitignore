@@ -1,6 +1,7 @@
 # Ignore all .ics files except for test files
 *.ics
 !testing*.ics
+*venv
 
 # Dumb macOS
 .DS_Store

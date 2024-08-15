@@ -139,6 +139,62 @@ def get_cal_path(calendar_file: str) -> str:
     return str(CALENDARS_DIR) + f"/{calendar_file}.ics"
 
 
+def get_num_test_files():
+    """
+    Gets the nummber of testing .ics files available.
+
+    Returns:
+        int: Number of available files.
+    """
+    pattern = os.path.join(CALENDARS_DIR, 'testing[0-9]*.ics')
+    matching_files = glob.glob(pattern)
+
+    return len(matching_files)
+
+
+NUM_TEST_FILES = get_num_test_files()
+
+
+def get_calendar_file() -> str:
+    """
+    Get's the calendar file path, handles errors if not found.
+    If no path is found, the testing file will be used instead.
+
+    Raises:
+        FileNotFoundError: If the file is not found.
+
+    Returns:
+        str: The file path
+    """
+    while True:
+        try:
+            cal_file = input(
+                "Enter the calendar file's name (blank for test files): ")
+
+            if not cal_file:
+                num_test = input(f"There are {NUM_TEST_FILES} test files " +
+                                 "available, enter a number to use one: ")
+                cal_file = "testing" + num_test
+
+            file_pathname = get_cal_path(cal_file)  # pylint: disable=W0621
+            if not os.path.exists(file_pathname):
+                raise FileNotFoundError
+            break
+        except ValueError:
+            pass
+        except FileNotFoundError:
+            clear_terminal()
+            print(f"Testing file {cal_file}.ics not found." +
+                  " Check if file exists and also the " +
+                  f"spelling. File structure should be:\n{FILE_STRUCT}")
+
+    clear_terminal()
+    return file_pathname
+
+
+file_pathname = get_calendar_file()
+
+
 def get_start_day() -> datetime:
     """
     Gets the starting date.
@@ -146,6 +202,7 @@ def get_start_day() -> datetime:
     Returns:
         datetime: The starting date.
     """
+    print("\nThe starting date will default to today if left blank.")
     while True:
         try:
             start_date_in = input("Enter starting date in MM DD YY format: ")
@@ -173,13 +230,26 @@ def get_start_day() -> datetime:
     return start_datetime
 
 
-def get_end_day() -> datetime:
+start_day = get_start_day()
+
+
+def get_end_day(default_date: datetime = start_day) -> datetime:
     """
     Gets the ending date.
+
+    Args:
+        default_date (datetime, optional): Used for logic after undefined user
+        input. Default value is start_day and the return value will be one week
+        from that date. Likewise, if an argument is passed in here, the return
+        value will be one week from that date.
 
     Returns:
         datetime: The ending date.
     """
+
+    print("\nThe ending date will default to a week from the starting date" +
+          " if left blank.")
+
     while True:
         try:
             end_date_in = input("Enter ending date in MM DD YY format: ")
@@ -190,8 +260,8 @@ def get_end_day() -> datetime:
                 end_date = f"{
                     date_arr[0]}-{date_arr[1]}-20{date_arr[2]}"
             else:
-                today = date.today()
-                end_date = (today + timedelta(weeks=1)).strftime("%m-%d-%Y")
+                end_date = (default_date + timedelta(weeks=1)
+                            ).strftime("%m-%d-%Y")
 
             end_datetime = datetime.strptime(end_date, "%m-%d-%Y")
             end_datetime = TIMEZONE.localize(end_datetime)
@@ -209,72 +279,8 @@ def get_end_day() -> datetime:
     return end_datetime
 
 
-def get_num_test_files():
-    """
-    Gets the nummber of testing .ics files available.
-
-    Returns:
-        int: Number of available files.
-    """
-    pattern = os.path.join(CALENDARS_DIR, 'testing[0-9]*.ics')
-    matching_files = glob.glob(pattern)
-
-    return len(matching_files)
-
-
-NUM_TEST_FILES = get_num_test_files()
-
-
-def get_calendar_file() -> tuple[str, datetime, datetime]:
-    """
-    Get's the calendar file path, handles errors if not found, asks user for
-    the starting date and ending date that they want to focus on and returns
-    a tuple containing the data. If no path is found, the testing file will be
-    used instead.
-
-    Raises:
-        FileNotFoundError: If the file is not found.
-
-    Returns:
-        tuple[str, datetime, datetime]: A tuple containing the filepath, the
-        starting date and ending date.
-    """
-    while True:
-        try:
-            cal_file = input(
-                "Enter the calendar file's name (blank for test files): ")
-
-            if not cal_file:
-                num_test = input(f"There are {NUM_TEST_FILES} test files " +
-                                 "available, enter a number to use one: ")
-                cal_file = "testing" + num_test
-
-            file_pathname = get_cal_path(cal_file)  # pylint: disable=W0621
-            if not os.path.exists(file_pathname):
-                raise FileNotFoundError
-            break
-        except ValueError:
-            pass
-        except FileNotFoundError:
-            clear_terminal()
-            print(f"Testing file {cal_file}.ics not found." +
-                  " Check if file exists and also the " +
-                  f"spelling. File structure should be:\n{FILE_STRUCT}")
-
-    clear_terminal()
-    print("\nThe starting date will default to today if left blank.")
-    start_day = get_start_day()  # pylint: disable=W0621
-    print("\nThe ending date will default to a week from today if left blank.")
-    end_day = get_end_day()  # pylint: disable=W0621
-
-    return (file_pathname, start_day, end_day)
-
-
-file_pathname, start_day, end_day = get_calendar_file()
+end_day = get_end_day(start_day)
 events = parse_ics(file_pathname, start_day, end_day)
-
-# events_json = json.dumps(events, indent=4)  # used for better pretty output
-# print(events_json)
 
 
 def get_events_between(start: datetime,
@@ -380,13 +386,13 @@ def view_events_in_range(start: datetime,
         tuple[int, list[dict]]: Tuple with the number of events and the events
     """
     number_events, list_events = get_events_between(start, end)
-    if number_events == 0:
-        print(f"There are no events to view from {start.strftime(
-            "%m-%d-%Y")} to {end.strftime("%m-%d-%Y")}.\n")
 
     while number_events == 0:
-        keep_going = input(
-            "Enter a new date range? (\"y\" to proceed): ").lower()
+        print(f"There are no events to view from {start.strftime("%m-%d-%Y")} "
+              + f"to {end.strftime("%m-%d-%Y")}.\n")
+
+        msg = "Enter a new date range? (\"y\" to proceed or blank to quit): "
+        keep_going = input(msg).lower()
 
         if not keep_going or keep_going == "n":
             exit_program()
@@ -397,7 +403,7 @@ def view_events_in_range(start: datetime,
 
         clear_terminal()
         new_start = get_start_day()
-        new_end = get_end_day()
+        new_end = get_end_day(new_start)
 
         list_events = parse_ics(path, new_start, new_end)
         number_events, list_events = get_events_between(new_start, new_end)
