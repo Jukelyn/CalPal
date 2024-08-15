@@ -26,7 +26,6 @@ FILE_STRUCT = """
             │   └─ ...
             └─ main.py
 """
-MANY_EVENTS = 5
 CALENDARS_DIR = (Path(__file__).parent / "calendars/").resolve()
 
 
@@ -37,7 +36,7 @@ def clear_terminal() -> None:
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
-def exit_program():
+def exit_program() -> None:
     """
     Exit's the program.
     """
@@ -139,7 +138,7 @@ def get_cal_path(calendar_file: str) -> str:
     return str(CALENDARS_DIR) + f"/{calendar_file}.ics"
 
 
-def get_num_test_files():
+def get_num_test_files() -> int:
     """
     Gets the nummber of testing .ics files available.
 
