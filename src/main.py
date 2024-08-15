@@ -10,10 +10,11 @@ from time import sleep
 from collections import defaultdict
 from typing import Optional
 import pytz  # type: ignore # pylint: disable=E0401
+from tzlocal import get_localzone  # type: ignore # pylint: disable=E0401
 from icalendar import Calendar  # type: ignore # pylint: disable=E0401
 import recurring_ical_events  # type: ignore # pylint: disable=E0401
 
-TIMEZONE = pytz.timezone('US/Eastern')
+TIMEZONE = pytz.timezone(str(get_localzone()))
 FILE_STRUCT = """
     Calendar-Parser/
         └─ src/
@@ -187,7 +188,6 @@ def get_calendar_file() -> str:
                   " Check if file exists and also the " +
                   f"spelling. File structure should be:\n{FILE_STRUCT}")
 
-    clear_terminal()
     return file_pathname
 
 
@@ -400,7 +400,6 @@ def view_events_in_range(start: datetime,
             print("Invalid response.")
             continue
 
-        clear_terminal()
         new_start = get_start_day()
         new_end = get_end_day(new_start)
 
