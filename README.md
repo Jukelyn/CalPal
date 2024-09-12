@@ -18,7 +18,7 @@ CalPal a program that is designed to parse `.ics` calendar files, extract event 
    - Prompts the user to input the desired calendar file, start date, and end date.
    - Offers options to display a specified number of events, sum event durations, or exit the program.
 
-## Usage
+## Usage (macOS)
 Create the venv:
 `python -m venv venv`
 
@@ -28,7 +28,7 @@ Activate venv:
 Install dependenceies:
 `pip install -r requirements.txt`
 
-Run `src/main.py`.
+Run `python src/main.py`
 
 The input dates assume 21st century. If for some reason somebody sees this project beyond 2099, feel free to edit that in the `get_start_day` and `get_end_day` functions.
 
