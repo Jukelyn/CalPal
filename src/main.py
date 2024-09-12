@@ -62,20 +62,21 @@ def get_cal_path(calendar_file: str) -> str:
     return str(CALENDARS_DIR) + f"/{calendar_file}.ics"
 
 
-def get_num_test_files() -> int:
+def get_num_test_files(pattern: str) -> int:
     """
     Gets the nummber of testing .ics files available.
 
     Returns:
         int: Number of available files.
     """
-    pattern = os.path.join(CALENDARS_DIR, 'testing[0-9]*.ics')
+    pattern = os.path.join(CALENDARS_DIR, pattern)
     matching_files = glob.glob(pattern)
 
-    return len(matching_files)
+    return (len(matching_files), matching_files)
 
 
-NUM_TEST_FILES = get_num_test_files()
+NUM_TEST_FILES, _ = get_num_test_files('testing[0-9]*.ics')
+NUM_ALL_FILES, ALL_FILES = get_num_test_files('*.ics')
 
 
 def get_calendar_file() -> str:
@@ -95,7 +96,7 @@ def get_calendar_file() -> str:
                 "Enter the calendar file's name (blank for test files): ")
 
             if not cal_file:
-                num_test = input(f"There are {NUM_TEST_FILES} test files " +
+                num_test = input(f"There are {NUM_TEST_FILES} test files",
                                  "available, enter a number to use one: ")
                 cal_file = "testing" + num_test
 
@@ -107,9 +108,22 @@ def get_calendar_file() -> str:
             pass
         except FileNotFoundError:
             clear_terminal()
-            print(f"Testing file {cal_file}.ics not found." +
-                  " Check if file exists and also the " +
+            print(f"File {cal_file}.ics not found.",
+                  "Check if file exists and also the",
                   f"spelling. File structure should be:\n{FILE_STRUCT}")
+            while True:
+                show_files = input("Would you like to view all available"
+                                   + " files? (y/n) ").lower()
+                if "y" == show_files:
+                    print(f"There are {NUM_ALL_FILES} ics files",
+                          "in ./calendars/:\n")
+                    for cal_file in sorted(ALL_FILES):
+                        print(os.path.basename(cal_file)[:-4], end=" ")
+                    print("\n")
+                    break
+                else:
+                    print('Option "y" not selected, skipping...\n')
+                    break
 
     return file_pathname
 
@@ -219,14 +233,8 @@ def parse_ics(file_path: str, start: datetime, end: datetime) -> list[dict]:
     Returns:
         list[dict]: A list of the events that were parsed from the file.
     """
-    try:
-        with open(file_path, 'rb') as f:
-            calendar = Calendar.from_ical(f.read())
-    except FileNotFoundError:
-        print(f"File {file_path} not found." +
-              " Check if file exists and also the spelling. " +
-              f"File structure should be:\n{FILE_STRUCT}")
-        exit_program()
+    with open(file_path, 'rb') as f:  # Errors handled in get_calendar_file()
+        calendar = Calendar.from_ical(f.read())
 
     events_list = []
     single_occurrence_events = []
